@@ -16,6 +16,12 @@ pub mod scanner;
 pub struct Config {
     #[arg()]
     file: PathBuf,
+
+    #[arg(long)]
+    pub no_run: bool,
+
+    #[arg(short, long)]
+    pub debug: bool,
 }
 
 impl Config {

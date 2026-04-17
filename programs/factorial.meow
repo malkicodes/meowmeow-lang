@@ -1,0 +1,14 @@
+mew meow~ mr                        # find = 1
+nya~                                # calculate factorial label
+mew mreow~ meow~                    # product = find
+mew meoww~ purr mr mreow~           # next = product - 1
+nyan meoww~ nyaa~
+nya nyaaa~                          # skip factorial calculation if next < 0
+nyaa~
+mew mreow~ purrr mreow~ meoww~      # product = product * find
+mew meoww~ purr mr meoww~           # find = find - 1
+nyan pur mrp meoww~ nyaa~           # jump back if find > 0
+nyaaa~
+mreow mreow~                        # print number
+mew meow~ pur mr meow~              # find = find + 1
+nyan purr meow~ mrrrrrrrrrrr nya~   # loop again if find - 10 > 0
