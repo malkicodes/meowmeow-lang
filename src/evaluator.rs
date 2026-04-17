@@ -1,3 +1,5 @@
+use std::io::stdin;
+
 use crate::{Environment, SyntaxTree, Value};
 
 pub fn eval(s: &SyntaxTree, env: &mut Environment) -> Result<Value, String> {
@@ -197,6 +199,48 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
             let value = eval(args.last().unwrap(), env)?;
 
             Ok(env.set(&variable_name, value).into())
+        }
+        "miaw" => {
+            let variable_name = match args.first().unwrap().clone() {
+                SyntaxTree::VariableId(name, iter) => match iter {
+                    0 => name,
+                    _ => return Err("variable variables are not implemented yet".to_owned()),
+                },
+                _ => return Err("assigning to something that is not a variable".to_owned()),
+            };
+
+            let mut input = String::new();
+            stdin()
+                .read_line(&mut input)
+                .map_err(|_| "error while input".to_owned())?;
+
+            let data = input
+                .chars()
+                .next()
+                .ok_or_else(|| "error while input".to_owned())?;
+
+            Ok(env.set(&variable_name, Value::Number(data as i64)).into())
+        }
+        "mriaw" => {
+            let variable_name = match args.first().unwrap().clone() {
+                SyntaxTree::VariableId(name, iter) => match iter {
+                    0 => name,
+                    _ => return Err("variable variables are not implemented yet".to_owned()),
+                },
+                _ => return Err("assigning to something that is not a variable".to_owned()),
+            };
+
+            let mut input = String::new();
+            stdin()
+                .read_line(&mut input)
+                .map_err(|_| "error while input".to_owned())?;
+
+            let data = input
+                .trim_end()
+                .parse()
+                .map_err(|_| "error while input".to_owned())?;
+
+            Ok(env.set(&variable_name, Value::Number(data)).into())
         }
         _ => Err(format!("unknown function: {func}")),
     }
