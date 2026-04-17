@@ -1,7 +1,7 @@
 use std::fs;
 
 use clap::Parser;
-use meowmeow_lang::{Config, scanner};
+use meowmeow_lang::{Config, Environment, evaluator::eval, parser::parse, scanner};
 
 fn main() {
     let config = Config::try_parse().unwrap();
@@ -13,5 +13,17 @@ fn main() {
         println!("{x:?}")
     }
 
-    println!("{tokens:?}")
+    let (syntax_trees, _) = parse(&tokens).unwrap();
+    println!("\nSYNTAX TREES:");
+
+    for syntax_tree in syntax_trees.iter() {
+        println!("{syntax_tree:?}")
+    }
+
+    // Code Evaluation
+    let mut env = Environment::default();
+
+    for s in syntax_trees.iter() {
+        eval(s, &mut env).unwrap();
+    }
 }

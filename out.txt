@@ -1,0 +1,47 @@
+Function("meow")
+String("Hello World!")
+Function("mreow")
+Operator('+')
+Number(2)
+Number(2)
+Function("meow")
+Number(10)
+Function("meow")
+Operator('*')
+Number(11)
+Number(7)
+Function("meow")
+Operator('-')
+Number(1)
+Operator('*')
+Number(10)
+Number(7)
+Function("meow")
+Operator('+')
+Number(-1)
+Operator('*')
+Number(10)
+Number(8)
+Function("meow")
+Operator('+')
+Number(-1)
+Operator('*')
+Number(11)
+Number(8)
+
+SYNTAX TREES:
+Function("meow", [Atom(Array["Hello World!"])])
+Function("mreow", [BinaryOp('+', Atom(Number(2)), Atom(Number(2)))])
+Function("meow", [Atom(Number(10))])
+Function("meow", [BinaryOp('*', Atom(Number(11)), Atom(Number(7)))])
+Function("meow", [BinaryOp('-', Atom(Number(1)), BinaryOp('*', Atom(Number(10)), Atom(Number(7))))])
+Function("meow", [BinaryOp('+', Atom(Number(-1)), BinaryOp('*', Atom(Number(10)), Atom(Number(8))))])
+Function("meow", [BinaryOp('+', Atom(Number(-1)), BinaryOp('*', Atom(Number(11)), Atom(Number(8))))])
+Hello World!
+4
+
+
+M
+E
+O
+W
