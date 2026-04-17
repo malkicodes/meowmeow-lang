@@ -1,7 +1,7 @@
 use std::fs;
 
 use clap::Parser;
-use meowmeow_lang::{Config, Environment, evaluator::eval, parser::parse, scanner};
+use meowmeow_lang::{Config, Environment, parser::parse, scanner};
 
 fn main() {
     let config = Config::try_parse().unwrap();
@@ -21,9 +21,7 @@ fn main() {
     }
 
     // Code Evaluation
-    let mut env = Environment::default();
+    let env = Environment::default().run(&syntax_trees);
 
-    for s in syntax_trees.iter() {
-        eval(s, &mut env).unwrap();
-    }
+    println!("{env:?}")
 }

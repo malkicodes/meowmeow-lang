@@ -6,6 +6,8 @@ use crate::Token;
 
 static VALID_MEOW_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\Amr{0,3}[iye]?[aoe]*[wu]*r?~*\z").unwrap());
+static VALID_NYA_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\Any{0,3}a+n?~?\z").unwrap());
 
 fn scan_mml_number(s: &str) -> Option<i64> {
     let mut chars = s.chars();
@@ -191,26 +193,31 @@ pub fn scan(text: &str) -> Result<Vec<Token>, String> {
             }
         }
 
-        if !VALID_MEOW_REGEX.is_match(word) {
-            return Err(format!("invalid meow: {word}"));
-        }
-
-        if word.ends_with('~') {
-            let (word, recursion_string) = match word.split_once('~') {
-                Some(v) => v,
-                None => unreachable!(),
-            };
-            output.push(Token::Variable(
-                word.to_owned(),
-                recursion_string.len().try_into().map_err(|_| {
-                    format!(
-                        "variable variable level too deep: {} > 255",
-                        recursion_string.len()
-                    )
-                })?,
-            ));
+        if VALID_MEOW_REGEX.is_match(word) {
+            if word.ends_with('~') {
+                let (word, recursion_string) = match word.split_once('~') {
+                    Some(v) => v,
+                    None => unreachable!(),
+                };
+                output.push(Token::Variable(
+                    word.to_owned(),
+                    recursion_string.len().try_into().map_err(|_| {
+                        format!(
+                            "variable variable level too deep: {} > 255",
+                            recursion_string.len()
+                        )
+                    })?,
+                ));
+            } else {
+                output.push(Token::Function(word.to_owned()));
+            }
+        } else if VALID_NYA_REGEX.is_match(word) {
+            output.push(match word.strip_suffix('~') {
+                Some(label_name) => Token::Label(label_name.to_owned()),
+                None => Token::Function(word.to_owned()),
+            })
         } else {
-            output.push(Token::Function(word.to_owned()));
+            return Err(format!("invalid meow or nya: {word}"));
         }
     }
 

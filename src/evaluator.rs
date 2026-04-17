@@ -15,6 +15,7 @@ pub fn eval(s: &SyntaxTree, env: &mut Environment) -> Result<Value, String> {
         SyntaxTree::UnaryOp(op, s) => eval_unary_op(*op, *s.clone(), env)?,
         SyntaxTree::BinaryOp(op, lhs, rhs) => eval_binary_op(*op, *lhs.clone(), *rhs.clone(), env)?,
         SyntaxTree::Function(func, args) => eval_function(func, args, env)?,
+        SyntaxTree::Label(_) => Value::Null,
     })
 }
 
@@ -71,6 +72,32 @@ fn eval_binary_op(
 }
 
 fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Result<Value, String> {
+    if let Some(SyntaxTree::Label(l)) = args.last() {
+        return match func {
+            "nya" => match env.jump_label(l) {
+                Some(_) => Ok(Value::Null),
+                None => Err(format!("unknown label {l}")),
+            },
+            "nyan" => {
+                let condition = args.first().unwrap();
+                match eval(condition, env)? {
+                    Value::Number(i) => {
+                        if i > 0 {
+                            match env.jump_label(l) {
+                                Some(_) => Ok(Value::Null),
+                                None => Err(format!("unknown label {l}")),
+                            }
+                        } else {
+                            Ok(Value::Null)
+                        }
+                    }
+                    _ => Err("invalid nyan condition".to_owned()),
+                }
+            }
+            _ => Err(format!("unknown function: {func}")),
+        };
+    }
+
     match func {
         "meow" => {
             let arg = eval(args.first().unwrap(), env)?;

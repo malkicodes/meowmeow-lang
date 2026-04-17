@@ -60,6 +60,7 @@ pub fn parse_one(tokens: &[Token]) -> Result<(SyntaxTree, usize), String> {
                         ));
                     }
                 }
+                Token::Label(s) => SyntaxTree::Label(s.clone()),
             },
             i,
         ))
