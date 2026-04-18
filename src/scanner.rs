@@ -170,6 +170,11 @@ pub fn scan(text: &str) -> Result<Vec<Token>, String> {
     let mut output = Vec::with_capacity(split_words.len());
 
     for word in split_words {
+        if word == "nyull" {
+            output.push(Token::Null);
+            continue;
+        }
+
         if word.starts_with('"') && word.ends_with('"') {
             output.push(Token::String(
                 word[1..word.len() - 1]

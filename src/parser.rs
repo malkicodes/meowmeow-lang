@@ -24,6 +24,7 @@ pub fn parse_one(tokens: &[Token]) -> Result<(SyntaxTree, usize), String> {
                 Token::String(s) => {
                     SyntaxTree::Atom(Value::Array(s.chars().map(|c| c as i64).collect()))
                 }
+                Token::Null => SyntaxTree::Atom(Value::Null),
                 Token::Variable(var, n) => SyntaxTree::VariableId(var.clone(), *n),
 
                 Token::Function(func) => {

@@ -34,6 +34,7 @@ impl Config {
 pub enum Token {
     Number(i64),
     String(String),
+    Null,
     Variable(String, u8),
     Function(String),
     Label(String),
