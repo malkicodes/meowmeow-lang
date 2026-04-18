@@ -104,7 +104,7 @@ pub enum SyntaxTree {
 
 pub fn get_operator_argument_count(op: char) -> usize {
     match op {
-        '!' => 1,
+        '!' | 'b' => 1,
         _ => 2,
     }
 }

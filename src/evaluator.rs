@@ -50,6 +50,17 @@ fn eval_unary_op(op: char, s: SyntaxTree, env: &mut Environment) -> Result<Value
     let value = eval(&s, env)?;
 
     Ok(match op {
+        'b' => {
+            if match value {
+                Value::Array(arr) => !arr.is_empty(),
+                Value::Null => false,
+                Value::Number(n) => n > 0,
+            } {
+                Value::Number(1)
+            } else {
+                Value::Number(0)
+            }
+        }
         '!' => match value {
             Value::Number(n) => {
                 if n > 0 {
@@ -58,6 +69,7 @@ fn eval_unary_op(op: char, s: SyntaxTree, env: &mut Environment) -> Result<Value
                     Value::Number(0)
                 }
             }
+            Value::Null => Value::Number(1),
             _ => return Err(format!("cannot do unary operator {op} with {value:?}")),
         },
         _ => return Err(format!("unknown unary operator: {op}")),
@@ -84,6 +96,17 @@ fn eval_binary_op(
         };
 
         Ok(Value::Number(match op {
+            '=' => {
+                if a == b {
+                    1
+                } else {
+                    0
+                }
+            }
+            '&' => b & a,
+            '|' => b | a,
+            '^' => b ^ a,
+
             '+' => b + a,
             '-' => b - a,
             '*' => b * a,

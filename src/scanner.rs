@@ -65,10 +65,12 @@ fn scan_mml_operator(s: &str) -> Option<(u8, u8)> {
 
 fn get_operator_from_ur(ur: (u8, u8)) -> Option<char> {
     Some(match ur {
-        (0, 1) => '!', // pr        = not
-        (0, 2) => '=', // prr       = is equivalent to (==)
-        (0, 3) => '&', // prrr      = and
-        (0, 4) => '|', // prrrr     = or
+        (0, 1) => 'b', // pr        = convert to 0 or 1
+        (0, 2) => '!', // prr       = not
+        (0, 3) => '=', // prrr      = is equivalent to (==)
+        (0, 4) => '&', // prrrr     = and
+        (0, 5) => '|', // prrrrr    = or
+        (0, 6) => '^', // prrrrrr   = xor
 
         (1, 1) => '+', // pur       = addition
         (1, 2) => '-', // purr      = subtraction
