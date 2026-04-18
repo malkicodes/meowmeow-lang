@@ -1,6 +1,6 @@
 use std::io::stdin;
 
-use crate::{Environment, SyntaxTree, Value};
+use crate::{Environment, SyntaxTree, Value, scanner::VALID_MEOW_REGEX};
 
 pub fn eval(s: &SyntaxTree, env: &mut Environment) -> Result<Value, String> {
     Ok(match s {
@@ -12,7 +12,32 @@ pub fn eval(s: &SyntaxTree, env: &mut Environment) -> Result<Value, String> {
                     .cloned()
                     .ok_or_else(|| format!("undefined variable: {var}"));
             }
-            _ => return Err("variable variables are unimplemented".to_owned()),
+            _ => {
+                let mut var = var.clone();
+
+                for _ in 0..*iter_count {
+                    let val = env
+                        .get(&var)
+                        .cloned()
+                        .ok_or_else(|| format!("undefined variable: {var}"))?;
+
+                    if let Value::Array(_) = &val {
+                        var = val
+                            .to_array_string()
+                            .ok_or_else(|| format!("cannot use {val:?} as a variable"))?;
+
+                        if !VALID_MEOW_REGEX.is_match(&var) {
+                            return Err(format!("cannot use {var:?} as a variable"));
+                        }
+                    } else {
+                        return Err(format!("cannot use {val:?} as a variable"));
+                    }
+                }
+
+                env.get(&var)
+                    .cloned()
+                    .ok_or_else(|| format!("undefined variable: {var}"))?
+            }
         },
         SyntaxTree::UnaryOp(op, s) => eval_unary_op(*op, *s.clone(), env)?,
         SyntaxTree::BinaryOp(op, lhs, rhs) => eval_binary_op(*op, *lhs.clone(), *rhs.clone(), env)?,
@@ -188,26 +213,14 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
             Ok(arg)
         }
         "mew" => {
-            let variable_name = match args.first().unwrap().clone() {
-                SyntaxTree::VariableId(name, iter) => match iter {
-                    0 => name,
-                    _ => return Err("variable variables are not implemented yet".to_owned()),
-                },
-                _ => return Err("assigning to something that is not a variable".to_owned()),
-            };
+            let variable_name = get_variable_name(args.first().unwrap().clone(), env)?;
 
             let value = eval(args.last().unwrap(), env)?;
 
             Ok(env.set(&variable_name, value).into())
         }
         "miaw" => {
-            let variable_name = match args.first().unwrap().clone() {
-                SyntaxTree::VariableId(name, iter) => match iter {
-                    0 => name,
-                    _ => return Err("variable variables are not implemented yet".to_owned()),
-                },
-                _ => return Err("assigning to something that is not a variable".to_owned()),
-            };
+            let variable_name = get_variable_name(args.first().unwrap().clone(), env)?;
 
             let mut input = String::new();
             stdin()
@@ -222,13 +235,7 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
             Ok(env.set(&variable_name, Value::Number(data as i64)).into())
         }
         "mriaw" => {
-            let variable_name = match args.first().unwrap().clone() {
-                SyntaxTree::VariableId(name, iter) => match iter {
-                    0 => name,
-                    _ => return Err("variable variables are not implemented yet".to_owned()),
-                },
-                _ => return Err("assigning to something that is not a variable".to_owned()),
-            };
+            let variable_name = get_variable_name(args.first().unwrap().clone(), env)?;
 
             let mut input = String::new();
             stdin()
@@ -244,4 +251,37 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
         }
         _ => Err(format!("unknown function: {func}")),
     }
+}
+
+fn get_variable_name(variable: SyntaxTree, env: &mut Environment) -> Result<String, String> {
+    Ok(match variable {
+        SyntaxTree::VariableId(name, iter_count) => match iter_count {
+            0 => name,
+            _ => {
+                let mut var = name.clone();
+
+                for _ in 1..iter_count {
+                    let val = env
+                        .get(&var)
+                        .cloned()
+                        .ok_or_else(|| format!("undefined variable: {var}"))?;
+
+                    if let Value::Array(_) = &val {
+                        var = val
+                            .to_array_string()
+                            .ok_or_else(|| format!("cannot use {val:?} as a variable"))?;
+
+                        if !VALID_MEOW_REGEX.is_match(&var) {
+                            return Err(format!("cannot use {var:?} as a variable"));
+                        }
+                    } else {
+                        return Err(format!("cannot use {val:?} as a variable"));
+                    }
+                }
+
+                var
+            }
+        },
+        _ => return Err(format!("cannot use {variable:?} as a variable")),
+    })
 }

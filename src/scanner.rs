@@ -4,9 +4,9 @@ use regex::Regex;
 
 use crate::Token;
 
-static VALID_MEOW_REGEX: LazyLock<Regex> =
+pub static VALID_MEOW_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\Amr{0,3}[iye]?[aoe]*[wu]*r?~*\z").unwrap());
-static VALID_NYA_REGEX: LazyLock<Regex> =
+pub static VALID_NYA_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\Any{0,3}a+n?~?\z").unwrap());
 
 fn scan_mml_number(s: &str) -> Option<i64> {

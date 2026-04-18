@@ -21,7 +21,7 @@ fn main() {
 
     if config.debug {
         for (i, syntax_tree) in syntax_trees.iter().enumerate() {
-            eprintln!("{i:>3} |{syntax_tree:?}")
+            eprintln!("{i:>3} | {syntax_tree:?}")
         }
 
         eprintln!("\n\n--------------- OUTPUT STARTS HERE ---------------")
@@ -32,5 +32,7 @@ fn main() {
 
     if config.debug {
         println!("{env:?}")
+    } else if let Err(err) = env {
+        println!("An error occured: {err}")
     }
 }

@@ -47,28 +47,38 @@ pub enum Value {
     Array(Vec<i64>),
 }
 
+impl Value {
+    pub fn to_array_string(&self) -> Option<String> {
+        match self {
+            Value::Array(arr) => {
+                let mut output = String::with_capacity(arr.len());
+
+                for n in arr.iter().copied() {
+                    match TryInto::<u32>::try_into(n) {
+                        Ok(i) => match char::from_u32(i) {
+                            Some(c) => output.push(c),
+                            None => return None,
+                        },
+                        Err(_) => return None,
+                    }
+                }
+
+                Some(output)
+            }
+            _ => None,
+        }
+    }
+}
+
 impl Debug for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Null => f.write_str("Null"),
             Self::Number(arg0) => f.debug_tuple("Number").field(arg0).finish(),
-            Self::Array(arr) => {
-                f.write_str("Array")?;
-
-                let mut possible_output = String::with_capacity(arr.len());
-
-                for n in arr.iter().copied() {
-                    match TryInto::<u32>::try_into(n) {
-                        Ok(i) => match char::from_u32(i) {
-                            Some(c) => possible_output.push(c),
-                            None => return write!(f, "{arr:?}"),
-                        },
-                        Err(_) => return write!(f, "{arr:?}"),
-                    }
-                }
-
-                write!(f, "[{:?}]", possible_output.as_str())
-            }
+            Self::Array(arr) => match self.to_array_string() {
+                Some(s) => write!(f, "Array[{s:?}]"),
+                None => write!(f, "Array{arr:?}"),
+            },
         }
     }
 }
