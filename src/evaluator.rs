@@ -39,15 +39,15 @@ pub fn eval(s: &SyntaxTree, env: &mut Environment) -> Result<Value, String> {
                     .ok_or_else(|| format!("undefined variable: {var}"))?
             }
         },
-        SyntaxTree::UnaryOp(op, s) => eval_unary_op(*op, *s.clone(), env)?,
-        SyntaxTree::BinaryOp(op, lhs, rhs) => eval_binary_op(*op, *lhs.clone(), *rhs.clone(), env)?,
+        SyntaxTree::UnaryOp(op, s) => eval_unary_op(*op, s, env)?,
+        SyntaxTree::BinaryOp(op, lhs, rhs) => eval_binary_op(*op, lhs, rhs, env)?,
         SyntaxTree::Function(func, args) => eval_function(func, args, env)?,
         SyntaxTree::Label(_) => Value::Null,
     })
 }
 
-fn eval_unary_op(op: char, s: SyntaxTree, env: &mut Environment) -> Result<Value, String> {
-    let value = eval(&s, env)?;
+fn eval_unary_op(op: char, s: &SyntaxTree, env: &mut Environment) -> Result<Value, String> {
+    let value = eval(s, env)?;
 
     Ok(match op {
         'b' => {
@@ -78,12 +78,12 @@ fn eval_unary_op(op: char, s: SyntaxTree, env: &mut Environment) -> Result<Value
 
 fn eval_binary_op(
     op: char,
-    lhs: SyntaxTree,
-    rhs: SyntaxTree,
+    lhs: &SyntaxTree,
+    rhs: &SyntaxTree,
     env: &mut Environment,
 ) -> Result<Value, String> {
-    let lhv = eval(&lhs, env)?;
-    let rhv = eval(&rhs, env)?;
+    let lhv = eval(lhs, env)?;
+    let rhv = eval(rhs, env)?;
 
     if matches!(lhv, Value::Number(_)) && matches!(rhv, Value::Number(_)) {
         let a = match lhv {
@@ -236,14 +236,14 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
             Ok(arg)
         }
         "mew" => {
-            let variable_name = get_variable_name(args.first().unwrap().clone(), env)?;
+            let variable_name = get_variable_name(args.first().unwrap(), env)?;
 
             let value = eval(args.last().unwrap(), env)?;
 
             Ok(env.set(&variable_name, value).into())
         }
         "miaw" => {
-            let variable_name = get_variable_name(args.first().unwrap().clone(), env)?;
+            let variable_name = get_variable_name(args.first().unwrap(), env)?;
 
             let mut input = String::new();
             stdin()
@@ -258,7 +258,7 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
             Ok(env.set(&variable_name, Value::Number(data as i64)).into())
         }
         "mriaw" => {
-            let variable_name = get_variable_name(args.first().unwrap().clone(), env)?;
+            let variable_name = get_variable_name(args.first().unwrap(), env)?;
 
             let mut input = String::new();
             stdin()
@@ -276,17 +276,16 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
     }
 }
 
-fn get_variable_name(variable: SyntaxTree, env: &mut Environment) -> Result<String, String> {
+fn get_variable_name(variable: &SyntaxTree, env: &mut Environment) -> Result<String, String> {
     Ok(match variable {
         SyntaxTree::VariableId(name, iter_count) => match iter_count {
-            0 => name,
+            0 => name.clone(),
             _ => {
                 let mut var = name.clone();
 
-                for _ in 1..iter_count {
+                for _ in 1..*iter_count {
                     let val = env
                         .get(&var)
-                        .cloned()
                         .ok_or_else(|| format!("undefined variable: {var}"))?;
 
                     if let Value::Array(_) = &val {
