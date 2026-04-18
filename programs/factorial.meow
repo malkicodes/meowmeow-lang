@@ -11,4 +11,4 @@ nyan pur mrp meoww~ nyaa~           # jump back if find > 0
 nyaaa~
 mreow mreow~                        # print number
 mew meow~ pur mr meow~              # find = find + 1
-nyan purr meow~ mrrrrrrrrrrr nya~   # loop again if find - 10 > 0
+nyan purr meow~ mrrrrrrrrrrr nya~   # loop again if 10 - find > 0

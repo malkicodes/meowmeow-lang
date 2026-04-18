@@ -293,6 +293,17 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
 
             Ok(arg)
         }
+        "mreowr" => {
+            let arg = eval(args.first().unwrap(), env)?;
+
+            match &arg {
+                Value::Null => print!("nyull"),
+                Value::Number(v) => print!("{v}"),
+                Value::Array(arr) => print!("{arr:?}"),
+            }
+
+            Ok(arg)
+        }
 
         "mew" => {
             let variable_name = get_variable_name(args.first().unwrap(), env)?;
