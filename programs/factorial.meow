@@ -3,7 +3,7 @@ nya~                                # calculate factorial label
 mew mreow~ meow~                    # product = find
 mew meoww~ purr mr mreow~           # next = product - 1
 nyan meoww~ nyaa~
-nya nyaaa~                          # skip factorial calculation if next < 0
+nya nyaaa~                          # skip calculation if next < 0
 nyaa~
 mew mreow~ purrr mreow~ meoww~      # product = product * find
 mew meoww~ purr mr meoww~           # find = find - 1
