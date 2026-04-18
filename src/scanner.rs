@@ -234,7 +234,7 @@ pub fn scan(text: &str) -> Result<Vec<Token>, String> {
     Ok(output)
 }
 
-fn unescape_string(s: &str) -> Option<Vec<u32>> {
+pub fn unescape_string(s: &str) -> Option<Vec<u32>> {
     let mut output = Vec::with_capacity(s.len());
     let mut chars = s.chars();
 

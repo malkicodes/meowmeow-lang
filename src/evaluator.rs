@@ -1,6 +1,9 @@
 use std::io::stdin;
 
-use crate::{Environment, SyntaxTree, Value, scanner::VALID_MEOW_REGEX};
+use crate::{
+    Environment, SyntaxTree, Value,
+    scanner::{VALID_MEOW_REGEX, unescape_string},
+};
 
 pub fn eval(s: &SyntaxTree, env: &mut Environment) -> Result<Value, String> {
     Ok(match s {
@@ -327,6 +330,22 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
 
             Ok(env.set(&variable_name, Value::Number(data as i64)).into())
         }
+        "miawr" => {
+            let variable_name = get_variable_name(args.first().unwrap(), env)?;
+
+            let mut input = String::new();
+            stdin()
+                .read_line(&mut input)
+                .map_err(|_| "error while input".to_owned())?;
+
+            let data = unescape_string(input.trim_end_matches('\n'))
+                .ok_or_else(|| "invalid input".to_owned())?
+                .iter()
+                .map(|x| *x as i64)
+                .collect::<Vec<_>>();
+
+            Ok(env.set(&variable_name, Value::Array(data)).into())
+        }
         "mriaw" => {
             let variable_name = get_variable_name(args.first().unwrap(), env)?;
 
@@ -341,6 +360,25 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
                 .map_err(|_| "error while input".to_owned())?;
 
             Ok(env.set(&variable_name, Value::Number(data)).into())
+        }
+        "mriawr" => {
+            let variable_name = get_variable_name(args.first().unwrap(), env)?;
+
+            let mut input = String::new();
+            stdin()
+                .read_line(&mut input)
+                .map_err(|_| "error while input".to_owned())?;
+
+            let mut data = Vec::with_capacity(input.len() / 2 + 1);
+
+            for n in input
+                .split_ascii_whitespace()
+                .map(|x| x.parse().map_err(|_| "invalid input".to_owned()))
+            {
+                data.push(n?);
+            }
+
+            Ok(env.set(&variable_name, Value::Array(data)).into())
         }
 
         "miao" => {
