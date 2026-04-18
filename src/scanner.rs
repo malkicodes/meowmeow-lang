@@ -103,7 +103,7 @@ impl SplitState {
     }
 }
 
-fn split(text: &str) -> Result<Vec<&str>, String> {
+fn split(text: &str) -> Result<Vec<&str>, (String, usize)> {
     let mut output = Vec::new();
 
     let mut state: SplitState = SplitState::Awaiting;
@@ -111,6 +111,7 @@ fn split(text: &str) -> Result<Vec<&str>, String> {
     let mut comment: bool = false;
 
     for (i, c) in text.char_indices() {
+        println!("{state:?}: {i} {c:?} | {escape} {comment}");
         if comment {
             if c == '\n' {
                 comment = false;
@@ -118,15 +119,14 @@ fn split(text: &str) -> Result<Vec<&str>, String> {
             continue;
         }
 
-        if c == '#' && !matches!(state, SplitState::String(_)) {
+        if c == '#' && !escape && !matches!(state, SplitState::String(_)) {
             comment = true;
 
             match state {
                 SplitState::Identifier(start_i) => output.push(&text[start_i..]),
-                SplitState::String(_) => return Err("unclosed string".to_owned()),
+                SplitState::String(_) => return Err(("unclosed string".to_owned(), i)),
                 SplitState::Awaiting => (),
             }
-
             continue;
         }
 
@@ -140,7 +140,7 @@ fn split(text: &str) -> Result<Vec<&str>, String> {
         } else if c == '"' {
             match state {
                 SplitState::Identifier(_) => {
-                    return Err("identifier too close to string".to_owned());
+                    return Err(("identifier too close to string".to_owned(), i));
                 }
                 SplitState::String(start_i) => {
                     if !escape {
@@ -157,12 +157,14 @@ fn split(text: &str) -> Result<Vec<&str>, String> {
         } else if let SplitState::Awaiting = state {
             state = SplitState::Identifier(i);
             escape = false;
+        } else {
+            escape = false;
         }
     }
 
     match state {
         SplitState::Identifier(start_i) => output.push(&text[start_i..]),
-        SplitState::String(_) => return Err("unclosed string".to_owned()),
+        SplitState::String(start_i) => return Err(("unclosed string".to_owned(), start_i)),
         SplitState::Awaiting => (),
     }
 
@@ -170,7 +172,7 @@ fn split(text: &str) -> Result<Vec<&str>, String> {
 }
 
 pub fn scan(text: &str) -> Result<Vec<Token>, String> {
-    let split_words = split(text)?;
+    let split_words = split(text).map_err(|(s, i)| format!("splitting error at {i}: {s}"))?;
 
     let mut output = Vec::with_capacity(split_words.len());
 
