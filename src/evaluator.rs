@@ -344,7 +344,7 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
                 arr.push(n);
                 Ok(Value::Null)
             } else {
-                return Err("trying to append to non-array or undefined variable".to_owned());
+                Err("trying to append to non-array or undefined variable".to_owned())
             }
         }
         "miaor" => {
