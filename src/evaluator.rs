@@ -122,7 +122,7 @@ fn eval_binary_op(
             '+' => b + a,
             '-' => b - a,
             '*' => b * a,
-            '/' => b - a,
+            '/' => b / a,
             '%' => b % a,
             _ => {
                 return Err(format!(
@@ -205,7 +205,7 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
                     _ => Err("invalid nyan condition".to_owned()),
                 }
             }
-            _ => Err(format!("unknown function: {func}")),
+            _ => Err(format!("unknown function or invalid parameters: {func}")),
         };
     }
 
@@ -425,7 +425,7 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
                 s => eval_binary_op('i', &SyntaxTree::Atom(Value::Number(-1)), s, env),
             }
         }
-        _ => Err(format!("unknown function: {func}")),
+        _ => Err(format!("unknown function or invalid parameters: {func}")),
     }
 }
 
