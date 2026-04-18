@@ -180,13 +180,11 @@ pub fn scan(text: &str) -> Result<Vec<Token>, String> {
             continue;
         }
 
-        if word.starts_with('"') && word.ends_with('"') {
+        if let Some(string) = word.strip_prefix('"').and_then(|s| s.strip_suffix('"')) {
             output.push(Token::String(
-                word[1..word.len() - 1]
-                    .replace("\\n", "\n")
-                    .replace("\\t", "\t")
-                    .replace("\\r", "\r")
-                    .replace(r"\\", r"\"),
+                unescape_string(string)
+                    .ok_or_else(|| "invalid array".to_owned())
+                    .unwrap(),
             ));
             continue;
         }
@@ -236,12 +234,61 @@ pub fn scan(text: &str) -> Result<Vec<Token>, String> {
     Ok(output)
 }
 
+fn unescape_string(s: &str) -> Option<Vec<u32>> {
+    let mut output = Vec::with_capacity(s.len());
+    let mut chars = s.chars();
+
+    while let Some(c) = chars.next() {
+        output.push(if c == '\\' {
+            match chars.next() {
+                Some('n') => '\n' as u32,
+                Some('r') => '\r' as u32,
+                Some('t') => '\t' as u32,
+                Some('\\') => '\\' as u32,
+                Some('0') => '\0' as u32,
+                Some('\'') => '\'' as u32,
+                Some('"') => '"' as u32,
+                Some('x') => {
+                    let d1 = chars.next()?.to_digit(8)?;
+                    let d2 = chars.next()?.to_digit(16)?;
+                    (d1 << 4) + d2
+                }
+                Some('u') => {
+                    if chars.next() != Some('{') {
+                        return None;
+                    }
+
+                    let mut n: u32 = 0;
+
+                    loop {
+                        let c = match chars.next() {
+                            Some('}') => break,
+                            Some(v) => v,
+                            None => return None,
+                        };
+
+                        n = (n << 4) + c.to_digit(16)?;
+                    }
+
+                    n
+                }
+                None => return None,
+                _ => return None,
+            }
+        } else {
+            c.into()
+        })
+    }
+
+    Some(output)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn text_split() {
+    fn split_works() {
         let v = split(r#"hello world "hello world" "\"meow meow\"""#);
         assert_eq!(
             v.unwrap(),
@@ -268,7 +315,7 @@ meow pur mrp purrr mrrrrrrrrrrr mrrrrrrrr   # 11 * 8 + -1 = 87 = W"#;
             tokens,
             [
                 Function("meow".to_owned()),
-                String("Hello World!".to_owned()),
+                String("Hello World!".chars().map(|x| x as u32).collect()),
                 Function("mreow".to_owned()),
                 Operator('+'),
                 Number(2),
@@ -299,5 +346,14 @@ meow pur mrp purrr mrrrrrrrrrrr mrrrrrrrr   # 11 * 8 + -1 = 87 = W"#;
                 Number(8)
             ]
         )
+    }
+
+    #[test]
+    fn unescape_works() {
+        let inp = "Hello\nWorld!\0\n\t\x07🐈".to_owned();
+        assert_eq!(
+            unescape_string(&inp.escape_default().to_string()).unwrap(),
+            inp.chars().map(|c| c as u32).collect::<Vec<u32>>()
+        );
     }
 }

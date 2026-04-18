@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    fmt::Debug,
+    fmt::{Debug, Display, Write},
     path::{Path, PathBuf},
 };
 
@@ -33,7 +33,7 @@ impl Config {
 #[derive(Debug, Clone, PartialEq, Hash)]
 pub enum Token {
     Number(i64),
-    String(String),
+    String(Vec<u32>),
     Null,
     Variable(String, u8),
     Function(String),
@@ -79,6 +79,31 @@ impl Debug for Value {
             Self::Array(arr) => match self.to_array_string() {
                 Some(s) => write!(f, "Array[{s:?}]"),
                 None => write!(f, "Array{arr:?}"),
+            },
+        }
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Null => write!(f, "nyull"),
+            Value::Number(n) => {
+                f.write_char('m')?;
+
+                for _ in 0..n.abs() {
+                    f.write_char('r')?;
+                }
+
+                if *n < 0 {
+                    f.write_char('p')?;
+                }
+
+                Ok(())
+            }
+            Value::Array(arr) => match self.to_array_string() {
+                Some(s) => write!(f, "{s:?}"),
+                None => write!(f, "{arr:?}"),
             },
         }
     }

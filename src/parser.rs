@@ -22,7 +22,7 @@ pub fn parse_one(tokens: &[Token]) -> Result<(SyntaxTree, usize), String> {
             match token {
                 Token::Number(n) => SyntaxTree::Atom(Value::Number(*n)),
                 Token::String(s) => {
-                    SyntaxTree::Atom(Value::Array(s.chars().map(|c| c as i64).collect()))
+                    SyntaxTree::Atom(Value::Array(s.iter().map(|x| *x as i64).collect()))
                 }
                 Token::Null => SyntaxTree::Atom(Value::Null),
                 Token::Variable(var, n) => SyntaxTree::VariableId(var.clone(), *n),

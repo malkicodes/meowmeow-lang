@@ -344,30 +344,47 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
         }
 
         "miao" => {
-            let variable_name = get_variable_name(args.last().unwrap(), env)?;
+            let arr = args.last().unwrap();
             let n = if let Value::Number(n) = eval(args.first().unwrap(), env)? {
                 n
             } else {
                 return Err("trying to append non-number to array".to_owned());
             };
 
-            if let Some(Value::Array(arr)) = env.get_mut(&variable_name) {
-                arr.push(n);
-                Ok(Value::Null)
-            } else {
-                Err("trying to append to non-array or undefined variable".to_owned())
+            match arr {
+                SyntaxTree::VariableId(..) => {
+                    let variable_name = get_variable_name(arr, env)?;
+
+                    if let Some(Value::Array(arr)) = env.get_mut(&variable_name) {
+                        arr.push(n);
+                        Ok(Value::Number(n))
+                    } else {
+                        Err("trying to append to non-array or undefined variable".to_owned())
+                    }
+                }
+                _ => Err(
+                    "cannot append to non-variable array; use pur [array] puurrr [value] instead"
+                        .to_owned(),
+                ),
             }
         }
         "miaor" => {
-            let variable_name = get_variable_name(args.first().unwrap(), env)?;
+            let arr = args.first().unwrap();
 
-            if let Some(Value::Array(arr)) = env.get_mut(&variable_name) {
-                Ok(match arr.pop() {
-                    Some(n) => Value::Number(n),
-                    None => Value::Null,
-                })
-            } else {
-                Err("trying to pop from non-array or undefined variable".to_owned())
+            match arr {
+                SyntaxTree::VariableId(..) => {
+                    let variable_name = get_variable_name(args.first().unwrap(), env)?;
+
+                    if let Some(Value::Array(arr)) = env.get_mut(&variable_name) {
+                        Ok(match arr.pop() {
+                            Some(n) => Value::Number(n),
+                            None => Value::Null,
+                        })
+                    } else {
+                        Err("trying to pop from non-array or undefined variable".to_owned())
+                    }
+                }
+                s => eval_binary_op('i', &SyntaxTree::Atom(Value::Number(-1)), s, env),
             }
         }
         _ => Err(format!("unknown function: {func}")),
