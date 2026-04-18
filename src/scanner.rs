@@ -111,7 +111,6 @@ fn split(text: &str) -> Result<Vec<&str>, (String, usize)> {
     let mut comment: bool = false;
 
     for (i, c) in text.char_indices() {
-        println!("{state:?}: {i} {c:?} | {escape} {comment}");
         if comment {
             if c == '\n' {
                 comment = false;
