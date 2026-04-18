@@ -381,7 +381,7 @@ fn get_variable_name(variable: &SyntaxTree, env: &mut Environment) -> Result<Str
             _ => {
                 let mut var = name.clone();
 
-                for _ in 1..*iter_count {
+                for _ in 0..*iter_count {
                     let val = env
                         .get(&var)
                         .ok_or_else(|| format!("undefined variable: {var}"))?;
