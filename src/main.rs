@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, process};
 
 use clap::Parser;
 use meowmeow_lang::{Config, Environment, parser::parse, scanner};
@@ -31,8 +31,9 @@ fn main() {
     let env = Environment::default().run(&syntax_trees);
 
     if config.debug {
-        println!("{env:?}")
+        eprintln!("{env:?}")
     } else if let Err(err) = env {
-        println!("An error occured: {err}")
+        eprintln!("An error occured: {err}");
+        process::exit(1);
     }
 }
