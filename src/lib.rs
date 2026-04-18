@@ -105,15 +105,16 @@ pub enum SyntaxTree {
 
 pub fn get_operator_argument_count(op: char) -> usize {
     match op {
-        '!' | 'b' => 1,
+        '!' | 'b' | 'l' | 'a' => 1,
         _ => 2,
     }
 }
 
 pub fn get_function_argument_count(function_name: &str) -> usize {
     match function_name {
-        "mew" => 2,
-        "nyan" => 2,
+        "mew" => 2,  // set variables
+        "nyan" => 2, // jump with condition
+        "miao" => 2, // push to array
         _ => 1,
     }
 }
@@ -144,6 +145,10 @@ impl Environment {
 
     pub fn get(&self, variable_name: &str) -> Option<&Value> {
         self.variables.get(variable_name)
+    }
+
+    pub fn get_mut(&mut self, variable_name: &str) -> Option<&mut Value> {
+        self.variables.get_mut(variable_name)
     }
 
     pub fn set(&mut self, variable_name: &str, value: Value) -> Option<Value> {

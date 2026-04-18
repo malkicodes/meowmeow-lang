@@ -72,6 +72,15 @@ fn eval_unary_op(op: char, s: &SyntaxTree, env: &mut Environment) -> Result<Valu
             Value::Null => Value::Number(1),
             _ => return Err(format!("cannot do unary operator {op} with {value:?}")),
         },
+        'l' => match value {
+            Value::Array(arr) => Value::Number(arr.len() as i64),
+            _ => return Err(format!("cannot do unary operator {op} with {value:?}")),
+        },
+        'a' => match &value {
+            Value::Null => Value::Array(Vec::new()),
+            Value::Number(i) => Value::Array(Vec::from([*i])),
+            Value::Array(_) => value,
+        },
         _ => return Err(format!("unknown unary operator: {op}")),
     })
 }
@@ -112,8 +121,57 @@ fn eval_binary_op(
             '*' => b * a,
             '/' => b - a,
             '%' => b % a,
-            _ => return Err(format!("unimplemented binary operator {op}")),
+            _ => {
+                return Err(format!(
+                    "cannot do binary operator {op} with {lhv:?} {rhv:?}"
+                ));
+            }
         }))
+    } else if matches!(lhv, Value::Array(_)) && matches!(rhv, Value::Array(_)) {
+        match op {
+            '+' => {
+                if let Value::Array(mut x) = lhv {
+                    if let Value::Array(mut y) = rhv {
+                        x.append(&mut y);
+                        Ok(Value::Array(x))
+                    } else {
+                        unreachable!()
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            _ => Err(format!(
+                "cannot do binary operator {op} with {lhv:?} {rhv:?}"
+            )),
+        }
+    } else if matches!(lhv, Value::Number(_)) && matches!(rhv, Value::Array(_)) {
+        let n = match lhv {
+            Value::Number(n) => n,
+            _ => unreachable!(),
+        };
+        let arr = match rhv {
+            Value::Array(arr) => arr,
+            _ => unreachable!(),
+        };
+
+        match op {
+            'i' => {
+                let arr_len = arr.len() as i64;
+
+                if n < -arr_len || n >= arr_len {
+                    Err(format!("index {n} out of bounds [0, {})", arr.len()))
+                } else if n >= 0 {
+                    Ok(Value::Number(arr[n as usize]))
+                } else {
+                    Ok(Value::Number(arr[(arr_len + n) as usize]))
+                }
+            }
+            _ => Err(format!(
+                "cannot do binary operator {op} with {n} {:?}",
+                Value::Array(arr)
+            )),
+        }
     } else {
         Err(format!(
             "cannot do binary operator {op} with {lhv:?} {rhv:?}"
@@ -235,6 +293,7 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
 
             Ok(arg)
         }
+
         "mew" => {
             let variable_name = get_variable_name(args.first().unwrap(), env)?;
 
@@ -271,6 +330,34 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
                 .map_err(|_| "error while input".to_owned())?;
 
             Ok(env.set(&variable_name, Value::Number(data)).into())
+        }
+
+        "miao" => {
+            let variable_name = get_variable_name(args.last().unwrap(), env)?;
+            let n = if let Value::Number(n) = eval(args.first().unwrap(), env)? {
+                n
+            } else {
+                return Err("trying to append non-number to array".to_owned());
+            };
+
+            if let Some(Value::Array(arr)) = env.get_mut(&variable_name) {
+                arr.push(n);
+                Ok(Value::Null)
+            } else {
+                return Err("trying to append to non-array or undefined variable".to_owned());
+            }
+        }
+        "miaor" => {
+            let variable_name = get_variable_name(args.first().unwrap(), env)?;
+
+            if let Some(Value::Array(arr)) = env.get_mut(&variable_name) {
+                Ok(match arr.pop() {
+                    Some(n) => Value::Number(n),
+                    None => Value::Null,
+                })
+            } else {
+                Err("trying to pop from non-array or undefined variable".to_owned())
+            }
         }
         _ => Err(format!("unknown function: {func}")),
     }
