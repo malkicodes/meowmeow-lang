@@ -25,5 +25,5 @@ meowr "\n"
 
 nya nya~
 nyya~
-meow "less than 3 things"
+meow "format must be [numerator] [denominator] [precision (under 15 to avoid precision errors)]"
 nya~
