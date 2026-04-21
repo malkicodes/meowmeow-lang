@@ -6,7 +6,8 @@ pub fn parse(tokens: &[Token]) -> Result<(Vec<SyntaxTree>, usize), String> {
     let mut i = 0;
 
     while i < tokens.len() {
-        let (instruction, j) = parse_one(&tokens[i..])?;
+        let (instruction, j) =
+            parse_one(&tokens[i..]).map_err(|err| format!("error at token {i}: {err}"))?;
         i += j;
         output.push(instruction);
     }

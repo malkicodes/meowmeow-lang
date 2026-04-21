@@ -161,7 +161,9 @@ impl Environment {
         }
 
         while let Some(s) = code.get(self.instruction_counter) {
-            eval(s, self)?;
+            eval(s, self).map_err(|err| {
+                format!("Error at instruction {}: {err}", self.instruction_counter)
+            })?;
             self.instruction_counter += 1;
         }
 
