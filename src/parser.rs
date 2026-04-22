@@ -27,7 +27,9 @@ pub fn parse_one(tokens: &[Token]) -> Result<(SyntaxTree, usize), String> {
                 }
                 Token::Null => SyntaxTree::Atom(Value::Null),
                 Token::Variable(var, n) => SyntaxTree::VariableId(var.clone(), *n),
-
+                Token::IndexedVariable(var, i, n) => {
+                    SyntaxTree::IndexedVariableId(var.clone(), *i, *n)
+                }
                 Token::Function(func) => {
                     let argument_count = get_function_argument_count(func);
 

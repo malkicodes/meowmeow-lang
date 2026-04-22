@@ -9,29 +9,48 @@ pub static VALID_MEOW_REGEX: LazyLock<Regex> =
 pub static VALID_NYA_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\Any{0,3}a+n?~?\z").unwrap());
 
-fn scan_mml_number(s: &str) -> Option<i64> {
-    let mut chars = s.chars();
+enum NumberOrIndexedResult {
+    Number(i64),
+    IndexedVariable(String, i64, u8),
+    None,
+}
+
+fn scan_mml_number_or_indexed(s: &str) -> NumberOrIndexedResult {
+    let mut chars = s.chars().peekable();
     let mut output = 0;
 
     if chars.next() != Some('m') {
-        return None;
+        return NumberOrIndexedResult::None;
     }
 
     while let Some(c) = chars.next() {
         match c {
             'r' => output += 1,
-            'p' => {
-                if chars.next().is_none() {
-                    output = -output
-                } else {
-                    return None; // mrrprrp should be invalid
+            'p' => match chars.peek() {
+                None => output = -output,
+                Some('m') => (),
+                Some(_) => return NumberOrIndexedResult::None,
+            }, // mrrp = -2
+            'm' => {
+                let mut variable_name = "m".to_owned();
+                for c in chars.by_ref() {
+                    variable_name.push(c);
                 }
-            } // mrrp = -2
-            _ => return None, // invalid number
+
+                if !VALID_MEOW_REGEX.is_match(&variable_name) {
+                    return NumberOrIndexedResult::None;
+                }
+
+                return match scan_mml_variable(&variable_name) {
+                    Ok((var, n)) => NumberOrIndexedResult::IndexedVariable(var, output, n),
+                    Err(_) => NumberOrIndexedResult::None,
+                };
+            }
+            _ => return NumberOrIndexedResult::None, // invalid number
         }
     }
 
-    Some(output)
+    NumberOrIndexedResult::Number(output)
 }
 
 fn scan_mml_operator(s: &str) -> Option<(u8, u8)> {
@@ -61,6 +80,23 @@ fn scan_mml_operator(s: &str) -> Option<(u8, u8)> {
     }
 
     Some((u, r))
+}
+
+fn scan_mml_variable(s: &str) -> Result<(String, u8), String> {
+    let (word, recursion_string) = match s.split_once('~') {
+        Some(v) => v,
+        None => return Err("could not split variable name and vv recursion level".to_owned()),
+    };
+
+    Ok((
+        word.to_owned(),
+        recursion_string.len().try_into().map_err(|_| {
+            format!(
+                "variable variable level too deep: {} > 255",
+                recursion_string.len()
+            )
+        })?,
+    ))
 }
 
 fn get_operator_from_ur(ur: (u8, u8)) -> Option<char> {
@@ -190,9 +226,16 @@ pub fn scan(text: &str) -> Result<Vec<Token>, String> {
             continue;
         }
 
-        if let Some(n) = scan_mml_number(word) {
-            output.push(Token::Number(n));
-            continue;
+        match scan_mml_number_or_indexed(word) {
+            NumberOrIndexedResult::Number(n) => {
+                output.push(Token::Number(n));
+                continue;
+            }
+            NumberOrIndexedResult::IndexedVariable(var, i, n) => {
+                output.push(Token::IndexedVariable(var, i, n));
+                continue;
+            }
+            NumberOrIndexedResult::None => (),
         }
 
         if let Some(ur) = scan_mml_operator(word) {
@@ -206,19 +249,8 @@ pub fn scan(text: &str) -> Result<Vec<Token>, String> {
 
         if VALID_MEOW_REGEX.is_match(word) {
             if word.ends_with('~') {
-                let (word, recursion_string) = match word.split_once('~') {
-                    Some(v) => v,
-                    None => unreachable!(),
-                };
-                output.push(Token::Variable(
-                    word.to_owned(),
-                    recursion_string.len().try_into().map_err(|_| {
-                        format!(
-                            "variable variable level too deep: {} > 255",
-                            recursion_string.len()
-                        )
-                    })?,
-                ));
+                let variable = scan_mml_variable(word)?;
+                output.push(Token::Variable(variable.0, variable.1));
             } else {
                 output.push(Token::Function(word.to_owned()));
             }

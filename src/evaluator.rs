@@ -42,6 +42,21 @@ pub fn eval(s: &SyntaxTree, env: &mut Environment) -> Result<Value, String> {
                     .ok_or_else(|| format!("undefined variable: {var}"))?
             }
         },
+        SyntaxTree::IndexedVariableId(_, index, _) => {
+            let var = get_variable_name(s, env)?;
+
+            let arr = env
+                .get(&var)
+                .cloned()
+                .ok_or_else(|| format!("undefined variable: {var}"))?;
+
+            if let Value::Array(arr) = arr {
+                arr.get(*index as usize)
+                    .map_or_else(|| Value::Null, |&v| Value::Number(v))
+            } else {
+                return Err(format!("cannot index to {var} which is not an array"));
+            }
+        }
         SyntaxTree::UnaryOp(op, s) => eval_unary_op(*op, s, env)?,
         SyntaxTree::BinaryOp(op, lhs, rhs) => eval_binary_op(*op, lhs, rhs, env)?,
         SyntaxTree::Function(func, args) => eval_function(func, args, env)?,
@@ -309,11 +324,32 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
         }
 
         "mew" => {
-            let variable_name = get_variable_name(args.first().unwrap(), env)?;
+            let variable = args.first().unwrap();
+            let variable_name = get_variable_name(variable, env)?;
 
             let value = eval(args.last().unwrap(), env)?;
 
-            Ok(env.set(&variable_name, value).into())
+            match variable {
+                SyntaxTree::VariableId(..) => Ok(env.set(&variable_name, value).into()),
+                SyntaxTree::IndexedVariableId(_, index, _) => match env.get_mut(&variable_name) {
+                    Some(Value::Array(arr)) => {
+                        if *index < 0 || arr.len() as i64 <= *index {
+                            Err("index out of bounds".to_owned())
+                        } else if let Value::Number(n) = value {
+                            let prev = arr[*index as usize];
+                            arr[*index as usize] = n;
+
+                            Ok(Value::Number(prev))
+                        } else {
+                            Err("cannot set non-number to item in array".to_owned())
+                        }
+                    }
+                    _ => Err(format!(
+                        "{variable_name} is either undefined or not an array"
+                    )),
+                },
+                _ => unreachable!(),
+            }
         }
         "miaw" => {
             let variable_name = get_variable_name(args.first().unwrap(), env)?;
@@ -430,33 +466,36 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
 }
 
 fn get_variable_name(variable: &SyntaxTree, env: &mut Environment) -> Result<String, String> {
-    Ok(match variable {
-        SyntaxTree::VariableId(name, iter_count) => match iter_count {
-            0 => name.clone(),
-            _ => {
-                let mut var = name.clone();
-
-                for _ in 0..*iter_count {
-                    let val = env
-                        .get(&var)
-                        .ok_or_else(|| format!("undefined variable: {var}"))?;
-
-                    if let Value::Array(_) = &val {
-                        var = val
-                            .to_array_string()
-                            .ok_or_else(|| format!("cannot use {val:?} as a variable"))?;
-
-                        if !VALID_MEOW_REGEX.is_match(&var) {
-                            return Err(format!("cannot use {var:?} as a variable"));
-                        }
-                    } else {
-                        return Err(format!("cannot use {val:?} as a variable"));
-                    }
-                }
-
-                var
-            }
-        },
+    let (name, iter_count) = match &variable {
+        SyntaxTree::VariableId(name, iter_count) => (name, iter_count),
+        SyntaxTree::IndexedVariableId(name, _, iter_count) => (name, iter_count),
         _ => return Err(format!("cannot use {variable:?} as a variable")),
+    };
+
+    Ok(match iter_count {
+        0 => name.clone(),
+        _ => {
+            let mut var = name.clone();
+
+            for _ in 0..*iter_count {
+                let val = env
+                    .get(&var)
+                    .ok_or_else(|| format!("undefined variable: {var}"))?;
+
+                if let Value::Array(_) = &val {
+                    var = val
+                        .to_array_string()
+                        .ok_or_else(|| format!("cannot use {val:?} as a variable"))?;
+
+                    if !VALID_MEOW_REGEX.is_match(&var) {
+                        return Err(format!("cannot use {var:?} as a variable"));
+                    }
+                } else {
+                    return Err(format!("cannot use {val:?} as a variable"));
+                }
+            }
+
+            var
+        }
     })
 }

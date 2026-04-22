@@ -36,6 +36,7 @@ pub enum Token {
     String(Vec<u32>),
     Null,
     Variable(String, u8),
+    IndexedVariable(String, i64, u8),
     Function(String),
     Label(String),
     Operator(char),
@@ -122,6 +123,7 @@ impl From<Option<Value>> for Value {
 pub enum SyntaxTree {
     Atom(Value),
     VariableId(String, u8),
+    IndexedVariableId(String, i64, u8),
     UnaryOp(char, Box<SyntaxTree>),
     BinaryOp(char, Box<SyntaxTree>, Box<SyntaxTree>),
     Function(String, Vec<SyntaxTree>),
