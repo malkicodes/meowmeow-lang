@@ -5,9 +5,9 @@ use regex::Regex;
 use crate::Token;
 
 pub static VALID_MEOW_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\Amr{0,3}[iye]?[aoe]*[wu]*r?~*\z").unwrap());
+    LazyLock::new(|| Regex::new(r"\Amr*[iye]?[aoe]*[wu]*r?~*\z").unwrap());
 pub static VALID_NYA_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\Any{0,3}a+n?~?\z").unwrap());
+    LazyLock::new(|| Regex::new(r"\Any*a+n?~?\z").unwrap());
 
 enum NumberOrIndexedResult {
     Number(i64),
