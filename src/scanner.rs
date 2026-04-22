@@ -114,6 +114,9 @@ fn get_operator_from_ur(ur: (u8, u8)) -> Option<char> {
         (1, 3) => '*', // purrr     = multiplication
         (1, 4) => '/', // purrrr    = division
         (1, 5) => '%', // purrrrr   = modulo
+        (1, 6) => '`', // purrrrrr  = exponentiation
+        (1, 7) => '√', // purrrrrrr = integer sqrt
+        (1, 8) => '_', // purrrrrrrr= abs
 
         (2, 1) => 'i', // puur      = index
         (2, 2) => 'l', // puurr     = length

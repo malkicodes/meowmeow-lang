@@ -166,6 +166,9 @@ meow "This will also print out"
 - `purrr [a] [b]`: multiplies \[a\] and \[b\]
 - `purrrr [a] [b]`: divides \[b\] by \[a\] (NOTE: computes b / a)
 - `purrrrr [a] [b]`: modulo, finds the remainder of \[b\] / \[a\] (NOTE: computes b % a)
+- `purrrrrr [a] [b]`: raises \[b\] to the power of \[a\] (NOTE: computes b ^ a)
+- `purrrrrrr [value]`: gets the square root of \[value\]
+- `purrrrrrrr [value]`: gets the absolute value of \[value\]
 
 ### Array (puurr)
 - `puur [i] [arr]`: gets the i+1th item in \[arr\]

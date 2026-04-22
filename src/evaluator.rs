@@ -99,6 +99,14 @@ fn eval_unary_op(op: char, s: &SyntaxTree, env: &mut Environment) -> Result<Valu
             Value::Number(i) => Value::Array(Vec::from([*i])),
             Value::Array(_) => value,
         },
+        '√' => match value {
+            Value::Number(n) => Value::Number(n.abs().isqrt() * n.signum()),
+            _ => return Err(format!("cannot do unary operator {op} with {value:?}")),
+        },
+        '_' => match value {
+            Value::Number(n) => Value::Number(n.abs()),
+            _ => return Err(format!("cannot do unary operator {op} with {value:?}")),
+        },
         _ => return Err(format!("unknown unary operator: {op}")),
     })
 }
@@ -139,6 +147,13 @@ fn eval_binary_op(
             '*' => b * a,
             '/' => b / a,
             '%' => b % a,
+            '`' => {
+                if a >= 0 {
+                    b.saturating_pow(a as u32)
+                } else {
+                    0 // since x^-n = 1 / x^n = 0 (and we don't have numbers between 0 and 1)
+                }
+            }
             _ => {
                 return Err(format!(
                     "cannot do binary operator {op} with {lhv:?} {rhv:?}"
