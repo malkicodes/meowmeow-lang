@@ -26,6 +26,7 @@ fn scan_mml_number_or_indexed(s: &str) -> NumberOrIndexedResult {
     while let Some(c) = chars.next() {
         match c {
             'r' => output += 1,
+            'w' => output *= 10,
             'p' => match chars.peek() {
                 None => output = -output,
                 Some('m') => (),
