@@ -198,33 +198,103 @@ fn eval_binary_op(
 }
 
 fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Result<Value, String> {
-    if let Some(SyntaxTree::Label(l)) = args.last() {
-        return match func {
-            "nya" => match env.jump_label(l) {
-                Some(_) => Ok(Value::Null),
-                None => Err(format!("unknown label {l}")),
-            },
-            "nyan" => {
-                let condition = args.first().unwrap();
-                match eval(condition, env)? {
-                    Value::Number(i) => {
-                        if i > 0 {
-                            match env.jump_label(l) {
-                                Some(_) => Ok(Value::Null),
-                                None => Err(format!("unknown label {l}")),
-                            }
+    match func {
+        // Input
+        "mew" => {
+            let variable = args.first().unwrap();
+            let variable_name = get_variable_name(variable, env)?;
+
+            let value = eval(args.last().unwrap(), env)?;
+
+            match variable {
+                SyntaxTree::VariableId(..) => Ok(env.set(&variable_name, value).into()),
+                SyntaxTree::IndexedVariableId(_, index, _) => match env.get_mut(&variable_name) {
+                    Some(Value::Array(arr)) => {
+                        if *index < 0 || arr.len() as i64 <= *index {
+                            Err("index out of bounds".to_owned())
+                        } else if let Value::Number(n) = value {
+                            let prev = arr[*index as usize];
+                            arr[*index as usize] = n;
+
+                            Ok(Value::Number(prev))
                         } else {
-                            Ok(Value::Null)
+                            Err("cannot set non-number to item in array".to_owned())
                         }
                     }
-                    _ => Err("invalid nyan condition".to_owned()),
-                }
+                    _ => Err(format!(
+                        "{variable_name} is either undefined or not an array"
+                    )),
+                },
+                _ => unreachable!(),
             }
-            _ => Err(format!("unknown function: {func}")),
-        };
-    }
+        }
+        "miaw" => {
+            let variable_name = get_variable_name(args.first().unwrap(), env)?;
 
-    match func {
+            let mut input = String::new();
+            stdin()
+                .read_line(&mut input)
+                .map_err(|_| "error while input".to_owned())?;
+
+            let data = input
+                .chars()
+                .next()
+                .ok_or_else(|| "error while input".to_owned())?;
+
+            Ok(env.set(&variable_name, Value::Number(data as i64)).into())
+        }
+        "miawr" => {
+            let variable_name = get_variable_name(args.first().unwrap(), env)?;
+
+            let mut input = String::new();
+            stdin()
+                .read_line(&mut input)
+                .map_err(|_| "error while input".to_owned())?;
+
+            let data = unescape_string(input.trim_end_matches('\n'))
+                .ok_or_else(|| "invalid input".to_owned())?
+                .iter()
+                .map(|x| *x as i64)
+                .collect::<Vec<_>>();
+
+            Ok(env.set(&variable_name, Value::Array(data)).into())
+        }
+        "mriaw" => {
+            let variable_name = get_variable_name(args.first().unwrap(), env)?;
+
+            let mut input = String::new();
+            stdin()
+                .read_line(&mut input)
+                .map_err(|_| "error while input".to_owned())?;
+
+            let data = input
+                .trim_end()
+                .parse()
+                .map_err(|_| "error while input".to_owned())?;
+
+            Ok(env.set(&variable_name, Value::Number(data)).into())
+        }
+        "mriawr" => {
+            let variable_name = get_variable_name(args.first().unwrap(), env)?;
+
+            let mut input = String::new();
+            stdin()
+                .read_line(&mut input)
+                .map_err(|_| "error while input".to_owned())?;
+
+            let mut data = Vec::with_capacity(input.len() / 2 + 1);
+
+            for n in input
+                .split_ascii_whitespace()
+                .map(|x| x.parse().map_err(|_| "invalid input".to_owned()))
+            {
+                data.push(n?);
+            }
+
+            Ok(env.set(&variable_name, Value::Array(data)).into())
+        }
+
+        // Output
         "meow" => {
             let arg = eval(args.first().unwrap(), env)?;
 
@@ -323,100 +393,7 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
             Ok(arg)
         }
 
-        "mew" => {
-            let variable = args.first().unwrap();
-            let variable_name = get_variable_name(variable, env)?;
-
-            let value = eval(args.last().unwrap(), env)?;
-
-            match variable {
-                SyntaxTree::VariableId(..) => Ok(env.set(&variable_name, value).into()),
-                SyntaxTree::IndexedVariableId(_, index, _) => match env.get_mut(&variable_name) {
-                    Some(Value::Array(arr)) => {
-                        if *index < 0 || arr.len() as i64 <= *index {
-                            Err("index out of bounds".to_owned())
-                        } else if let Value::Number(n) = value {
-                            let prev = arr[*index as usize];
-                            arr[*index as usize] = n;
-
-                            Ok(Value::Number(prev))
-                        } else {
-                            Err("cannot set non-number to item in array".to_owned())
-                        }
-                    }
-                    _ => Err(format!(
-                        "{variable_name} is either undefined or not an array"
-                    )),
-                },
-                _ => unreachable!(),
-            }
-        }
-        "miaw" => {
-            let variable_name = get_variable_name(args.first().unwrap(), env)?;
-
-            let mut input = String::new();
-            stdin()
-                .read_line(&mut input)
-                .map_err(|_| "error while input".to_owned())?;
-
-            let data = input
-                .chars()
-                .next()
-                .ok_or_else(|| "error while input".to_owned())?;
-
-            Ok(env.set(&variable_name, Value::Number(data as i64)).into())
-        }
-        "miawr" => {
-            let variable_name = get_variable_name(args.first().unwrap(), env)?;
-
-            let mut input = String::new();
-            stdin()
-                .read_line(&mut input)
-                .map_err(|_| "error while input".to_owned())?;
-
-            let data = unescape_string(input.trim_end_matches('\n'))
-                .ok_or_else(|| "invalid input".to_owned())?
-                .iter()
-                .map(|x| *x as i64)
-                .collect::<Vec<_>>();
-
-            Ok(env.set(&variable_name, Value::Array(data)).into())
-        }
-        "mriaw" => {
-            let variable_name = get_variable_name(args.first().unwrap(), env)?;
-
-            let mut input = String::new();
-            stdin()
-                .read_line(&mut input)
-                .map_err(|_| "error while input".to_owned())?;
-
-            let data = input
-                .trim_end()
-                .parse()
-                .map_err(|_| "error while input".to_owned())?;
-
-            Ok(env.set(&variable_name, Value::Number(data)).into())
-        }
-        "mriawr" => {
-            let variable_name = get_variable_name(args.first().unwrap(), env)?;
-
-            let mut input = String::new();
-            stdin()
-                .read_line(&mut input)
-                .map_err(|_| "error while input".to_owned())?;
-
-            let mut data = Vec::with_capacity(input.len() / 2 + 1);
-
-            for n in input
-                .split_ascii_whitespace()
-                .map(|x| x.parse().map_err(|_| "invalid input".to_owned()))
-            {
-                data.push(n?);
-            }
-
-            Ok(env.set(&variable_name, Value::Array(data)).into())
-        }
-
+        // Array Manipulation
         "miao" => {
             let arr = args.last().unwrap();
             let n = if let Value::Number(n) = eval(args.first().unwrap(), env)? {
@@ -459,6 +436,42 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
                     }
                 }
                 s => eval_binary_op('i', &SyntaxTree::Atom(Value::Number(-1)), s, env),
+            }
+        }
+
+        // Control Flow
+        "nya" => {
+            if let Some(SyntaxTree::Label(l)) = args.last() {
+                match env.jump_label(l) {
+                    Some(_) => Ok(Value::Null),
+                    None => Err(format!("unknown label {l}")),
+                }
+            } else {
+                Err(format!(
+                    "cannot do function {func} with non-label final argument"
+                ))
+            }
+        }
+        "nyan" => {
+            if let Some(SyntaxTree::Label(l)) = args.last() {
+                let condition = args.first().unwrap();
+                match eval(condition, env)? {
+                    Value::Number(i) => {
+                        if i > 0 {
+                            match env.jump_label(l) {
+                                Some(_) => Ok(Value::Null),
+                                None => Err(format!("unknown label {l}")),
+                            }
+                        } else {
+                            Ok(Value::Null)
+                        }
+                    }
+                    _ => Err("invalid nyan condition".to_owned()),
+                }
+            } else {
+                Err(format!(
+                    "cannot do function {func} with non-label final argument"
+                ))
             }
         }
         _ => Err(format!("unknown function: {func}")),
