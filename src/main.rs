@@ -10,20 +10,42 @@ fn main() {
     let tokens = scanner::scan(&text).unwrap();
 
     if config.debug {
+        eprint!("{} Token", tokens.len());
+
+        if tokens.len() != 1 {
+            eprint!("s");
+        }
+
+        eprintln!(":");
+
         for x in tokens.iter() {
             eprintln!("{x:?}")
         }
 
-        eprintln!("\n\n")
+        eprintln!()
     }
 
     let (syntax_trees, _) = parse(&tokens).unwrap();
 
     if config.debug {
-        for (i, syntax_tree) in syntax_trees.iter().enumerate() {
-            eprintln!("{i:>3} | {syntax_tree:?}")
+        let line_length = (syntax_trees.len() as f32).log10().floor() as usize + 1;
+
+        eprint!("{} Instruction", syntax_trees.len());
+
+        if syntax_trees.len() != 1 {
+            eprint!("s");
         }
 
+        eprintln!(":");
+
+        for (i, syntax_tree) in syntax_trees.iter().enumerate() {
+            eprintln!("{i:>line_length$} | {syntax_tree:?}")
+        }
+    }
+
+    if config.no_run {
+        process::exit(0)
+    } else if config.debug {
         eprintln!("\n\n--------------- OUTPUT STARTS HERE ---------------")
     }
 
