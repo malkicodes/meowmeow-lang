@@ -75,6 +75,19 @@ mreow purrr meow~ meoww~
 mew meow~ mrrrr mew meoww~ mrrrrr mreowr meow~ meowr " * " mreowr meoww~ meowr " = " mreow purrr meow~ meoww~
 ```
 
+For the program above, the `--debug` setting will output the following list instructions after the list of tokens:
+
+```
+7 Instructions:
+0 | Function("mew", [VariableId("meow", 0), Atom(Number(4))])
+1 | Function("mew", [VariableId("meoww", 0), Atom(Number(5))])
+2 | Function("mreowr", [VariableId("meow", 0)])
+3 | Function("meowr", [Atom(Array[" * "])])
+4 | Function("mreowr", [VariableId("meoww", 0)])
+5 | Function("meowr", [Atom(Array[" = "])])
+6 | Function("mreow", [BinaryOp('*', VariableId("meow", 0), VariableId("meoww", 0))])
+```
+
 ### Variables
 
 Variables in meowmeow, as mentioned before, must follow the meow regex listed in the *Naming Scheme* section.
