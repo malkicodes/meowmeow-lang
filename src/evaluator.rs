@@ -51,12 +51,12 @@ pub fn eval(s: &SyntaxTree, env: &mut Environment) -> Result<Value, String> {
                 .ok_or_else(|| format!("undefined variable: {var}"))?;
 
             if let Value::Array(arr) = arr {
-                arr.get(if *index >= 0 {
+                let i = if dbg!(*index) >= 0 {
                     *index as usize
                 } else {
-                    arr.len() - *index as usize
-                })
-                .map_or_else(|| Value::Null, |&v| Value::Number(v))
+                    arr.len().saturating_add_signed(*index as isize)
+                };
+                arr.get(dbg!(i)).map_or(Value::Null, |&v| Value::Number(v))
             } else {
                 return Err(format!("cannot index to {var} which is not an array"));
             }

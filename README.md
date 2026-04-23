@@ -116,7 +116,7 @@ mew meow~ "chaotic"         # meow~ = "chaotic"
 
 meowr mmeow~                # prints "chaotic"[0] = c
 meowr mrrmeow~              # prints "chaotic"[2] = a
-meowr mrrrrmeow~            # prints "chaotic"[4] = t
+meowr mrrrpmeow~            # prints "chaotic"[-3] = t (3rd from last element)
 
 mew mrrrmeow~ miaor "😼"    # sets the 4th item in meow~ to 😼
 meow mrrrmeow~              # prints 😼
