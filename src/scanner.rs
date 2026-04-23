@@ -28,8 +28,7 @@ fn scan_mml_number_or_indexed(s: &str) -> NumberOrIndexedResult {
             'r' => output += 1,
             'w' => output *= 10,
             'p' => match chars.peek() {
-                None => output = -output,
-                Some('m') => (),
+                None | Some('m') => output = -output,
                 Some(_) => return NumberOrIndexedResult::None,
             }, // mrrp = -2
             'm' => {
