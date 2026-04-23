@@ -51,8 +51,12 @@ pub fn eval(s: &SyntaxTree, env: &mut Environment) -> Result<Value, String> {
                 .ok_or_else(|| format!("undefined variable: {var}"))?;
 
             if let Value::Array(arr) = arr {
-                arr.get(*index as usize)
-                    .map_or_else(|| Value::Null, |&v| Value::Number(v))
+                arr.get(if *index >= 0 {
+                    *index as usize
+                } else {
+                    arr.len() - *index as usize
+                })
+                .map_or_else(|| Value::Null, |&v| Value::Number(v))
             } else {
                 return Err(format!("cannot index to {var} which is not an array"));
             }
@@ -228,8 +232,14 @@ fn eval_function(func: &str, args: &[SyntaxTree], env: &mut Environment) -> Resu
                         if *index < 0 || arr.len() as i64 <= *index {
                             Err("index out of bounds".to_owned())
                         } else if let Value::Number(n) = value {
-                            let prev = arr[*index as usize];
-                            arr[*index as usize] = n;
+                            let i = if *index >= 0 {
+                                *index as usize
+                            } else {
+                                arr.len() - *index as usize
+                            };
+
+                            let prev = arr[i];
+                            arr[i] = n;
 
                             Ok(Value::Number(prev))
                         } else {
